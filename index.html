@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mafia - A Game of Deception</title>
+    <title>Mafia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,6 +59,9 @@
         }
         .btn-secondary {
             @apply bg-gray-600 text-gray-200 font-bold py-3 px-6 rounded-sm shadow-lg hover:bg-gray-500 transform hover:-translate-y-0.5;
+        }
+        .btn-danger {
+            @apply bg-gray-800 text-red-400 border border-red-500 font-bold py-2 px-4 rounded-sm shadow-lg hover:bg-red-900/50 transform hover:-translate-y-0.5;
         }
         .input-field {
             background-color: #f3e9d2; /* Parchment */
@@ -185,7 +188,10 @@
                 <h3 class="text-xl font-semibold mb-3 text-center">Associates (<span id="player-count">0</span>)</h3>
                 <ul id="player-list" class="space-y-2"></ul>
             </div>
-            <button id="start-game-btn" class="btn btn-primary w-full">Begin the Operation</button>
+            <div class="space-y-2">
+                <button id="start-game-btn" class="btn btn-primary w-full">Begin the Operation</button>
+                <button id="back-to-main-from-lobby-btn" class="btn btn-secondary w-full">Leave Speakeasy</button>
+            </div>
         </div>
 
         <!-- Game Screen -->
@@ -216,6 +222,7 @@
              <div id="action-area" class="bg-black/20 p-4 rounded-lg text-center">
                 <p id="action-prompt" class="text-lg mb-4 text-gray-300"></p>
             </div>
+            <button id="end-game-btn" class="btn btn-danger w-full hidden">End Operation</button>
         </div>
         
         <!-- Game Over Screen -->
@@ -264,7 +271,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAm4nqYVq0zNKORe6zYVKGg-e7PKPvkPD8",
@@ -334,7 +341,6 @@
             }
         }
 
-        // --- RULEBOOK EVENT LISTENERS ---
         const rulebookBtn = document.getElementById('rulebook-btn');
         const rulebookModal = document.getElementById('rulebook-modal');
         const rulebookCloseBtn = document.getElementById('rulebook-close-btn');
@@ -342,9 +348,7 @@
         rulebookBtn.addEventListener('click', () => rulebookModal.classList.add('visible'));
         rulebookCloseBtn.addEventListener('click', () => rulebookModal.classList.remove('visible'));
         rulebookModal.addEventListener('click', (e) => {
-            if (e.target === rulebookModal) {
-                rulebookModal.classList.remove('visible');
-            }
+            if (e.target === rulebookModal) rulebookModal.classList.remove('visible');
         });
 
         document.getElementById('create-game-view-btn').addEventListener('click', createGame);
@@ -353,6 +357,8 @@
         document.getElementById('join-game-btn').addEventListener('click', joinGame);
         document.getElementById('start-game-btn').addEventListener('click', startGame);
         document.getElementById('game-code-display').addEventListener('click', copyGameCode);
+        document.getElementById('back-to-main-from-lobby-btn').addEventListener('click', leaveLobby);
+        document.getElementById('end-game-btn').addEventListener('click', endGameEarly);
         document.getElementById('play-again-btn').addEventListener('click', () => {
             if (unsubscribeGameListener) unsubscribeGameListener();
             resetLocalState();
@@ -395,6 +401,40 @@
                 }
                 currentGameCode = gameCode; listenToGameUpdates(gameCode);
             } catch (error) { console.error("Error joining game:", error); showAlert("Couldn't get you in. Check the code.", "error"); }
+        }
+
+        async function leaveLobby() {
+            if (!currentUserId || !currentGameCode) return;
+            const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode);
+            try {
+                const gameSnap = await getDoc(gameRef);
+                if (gameSnap.exists()) {
+                    const gameData = gameSnap.data();
+                    const updatedPlayers = gameData.players.filter(p => p.userId !== currentUserId);
+                    if (updatedPlayers.length === 0) {
+                        await deleteDoc(gameRef);
+                    } else {
+                        let newHostId = gameData.hostId;
+                        if (gameData.hostId === currentUserId) newHostId = updatedPlayers[0].userId;
+                        await updateDoc(gameRef, { players: updatedPlayers, hostId: newHostId });
+                    }
+                }
+            } catch (error) { console.error("Error leaving lobby:", error);
+            } finally {
+                if (unsubscribeGameListener) unsubscribeGameListener();
+                resetLocalState();
+                showScreen('initial');
+            }
+        }
+
+        async function endGameEarly() {
+            if (localGameState.hostId !== currentUserId) return;
+            const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode);
+            await updateDoc(gameRef, {
+                gameState: 'game-over',
+                winner: 'The Don',
+                narrative: 'The Don has called an end to the operation.'
+            });
         }
         
         function listenToGameUpdates(gameCode) {
@@ -471,6 +511,14 @@
             document.getElementById('player-role-icon').textContent = ROLE_ICONS[me.role];
             document.getElementById('game-phase-display').textContent = gameData.gameState === 'day' ? "Daylight Accusations" : "The Dead of Night";
             document.getElementById('narrative-message').textContent = gameData.narrative;
+
+            const endGameBtn = document.getElementById('end-game-btn');
+            if (gameData.hostId === currentUserId) {
+                endGameBtn.classList.remove('hidden');
+            } else {
+                endGameBtn.classList.add('hidden');
+            }
+
             const playerGrid = document.getElementById('game-player-grid');
             playerGrid.innerHTML = '';
             gameData.players.forEach(player => {
@@ -610,7 +658,13 @@
         }
         
         function updateGameOverUI(gameData) {
-            document.getElementById('winner-announcement').textContent = `${gameData.winner} now run this town.`;
+            const winnerAnnouncement = document.getElementById('winner-announcement');
+            if (gameData.winner === 'The Don') {
+                winnerAnnouncement.textContent = "The Don has ended the operation.";
+            } else {
+                winnerAnnouncement.textContent = `${gameData.winner} now run this town.`;
+            }
+
             const list = document.getElementById('final-roles-list'); list.innerHTML = '';
             gameData.players.forEach(p => {
                 const li = document.createElement('li');
