@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mafia - The Game</title>
+    <title>Mafia - A Game of Deception</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #111827; /* Tailwind gray-900 */
+            font-family: 'Merriweather', serif;
+            background-color: #1a1a1a;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: #e5e7eb; /* Gray-200 */
         }
         .font-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Abril Fatface', cursive;
         }
-        .hidden { display: none; }
         .screen {
             opacity: 0;
             transition: opacity 0.5s ease-in-out;
@@ -25,102 +28,171 @@
         .screen.visible {
             opacity: 1;
         }
+        .container-bg {
+            background-color: rgba(31, 41, 55, 0.8); /* Gray-800 with transparency */
+            border: 2px solid #4b5563; /* Gray-600 */
+            backdrop-filter: blur(5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
         .card {
             transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
             border: 2px solid transparent;
+            background-color: #374151; /* Gray-700 */
         }
         .card.selectable:hover:not(:disabled) {
             transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
-            border-color: #818cf8; /* Indigo-400 */
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.6);
+            border-color: #dc2626; /* Red-600 */
         }
         .card.eliminated {
             filter: grayscale(100%);
-            opacity: 0.5;
+            opacity: 0.4;
+            pointer-events: none;
         }
         .btn {
             transition: all 0.2s ease-in-out;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         .btn-primary {
-            @apply bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-indigo-700 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+            @apply bg-red-700 text-white font-bold py-3 px-6 rounded-sm shadow-lg hover:bg-red-600 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
         }
         .btn-secondary {
-            @apply bg-gray-700 text-gray-300 font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-gray-600 transform hover:-translate-y-0.5;
+            @apply bg-gray-600 text-gray-200 font-bold py-3 px-6 rounded-sm shadow-lg hover:bg-gray-500 transform hover:-translate-y-0.5;
         }
         .input-field {
-            @apply w-full px-4 py-3 bg-gray-200 text-gray-900 border-2 border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent;
+            background-color: #f3e9d2; /* Parchment */
+            color: #3d3d3d; /* Dark text */
+            border: 1px solid #c6b89e; /* Parchment edge */
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            font-family: 'Merriweather', serif;
+        }
+        .input-field::placeholder {
+            color: #8c7d5d; /* Lighter placeholder */
         }
         .custom-alert {
-            position: fixed;
-            top: 1.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 0.75rem 1.25rem;
-            border-radius: 0.375rem;
-            color: white;
-            z-index: 50;
-            font-size: 0.875rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            max-width: 90%;
-            text-align: center;
+            position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%);
+            padding: 0.75rem 1.25rem; border-radius: 2px; color: white;
+            z-index: 50; box-shadow: 0 4px 6px rgba(0,0,0,0.3); opacity: 0;
+            transition: opacity 0.3s ease-in-out; max-width: 90%; text-align: center;
         }
         .custom-alert.show { opacity: 1; }
-        .custom-alert.success { background-color: #28a745; }
-        .custom-alert.error { background-color: #dc3545; }
+        .custom-alert.success { background-color: #a18a5b; } /* Gold */
+        .custom-alert.error { background-color: #991b1b; } /* Dark Red */
+        
+        /* Rulebook Styles */
+        #rulebook-btn {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background-color: #f3e9d2;
+            color: #3d3d3d;
+            border: 2px solid #c6b89e;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.2s ease-in-out;
+        }
+        #rulebook-btn:hover {
+            transform: scale(1.1);
+            background-color: #fffbf2;
+        }
+        #rulebook-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            z-index: 101;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #rulebook-modal.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .rulebook-content {
+            background-color: #f3e9d2;
+            color: #3d3d3d;
+            padding: 2rem;
+            border-radius: 2px;
+            border: 4px double #c6b89e;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .rulebook-close-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #8c7d5d;
+        }
     </style>
 </head>
-<body class="text-gray-200 flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-4">
 
     <div id="app-container" class="w-full max-w-md mx-auto">
 
         <!-- Initial Screen -->
         <div id="initial-screen" class="screen text-center space-y-6">
-            <h1 class="font-title text-7xl text-white">Mafia</h1>
-            <p class="text-indigo-300 text-lg">A game of deception and survival.</p>
-            <div class="bg-gray-800 p-6 rounded-xl shadow-2xl">
-                <input id="username-input" type="text" placeholder="Enter Your Name" class="input-field text-center mb-4">
+            <h1 class="font-title text-8xl text-red-600" style="text-shadow: 3px 3px 0px #000;">Mafia</h1>
+            <p class="text-gray-400 text-lg">A Game of Loyalty & Deception</p>
+            <div class="container-bg p-6 rounded-lg">
+                <input id="username-input" type="text" placeholder="Enter Your Alias..." class="input-field w-full text-center mb-4 p-3 text-lg rounded-sm">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button id="create-game-view-btn" class="btn btn-primary">Create Game</button>
-                    <button id="join-game-view-btn" class="btn btn-secondary">Join Game</button>
+                    <button id="create-game-view-btn" class="btn btn-primary">Establish Family</button>
+                    <button id="join-game-view-btn" class="btn btn-secondary">Join Sit-Down</button>
                 </div>
             </div>
         </div>
         
         <!-- Join Game Screen -->
         <div id="join-game-screen" class="screen text-center space-y-6">
-             <h2 class="font-title text-5xl text-white">Join a Game</h2>
-             <div class="bg-gray-800 p-6 rounded-xl shadow-2xl">
-                <input id="game-code-input" type="text" placeholder="Enter 4-Letter Code" class="input-field text-center mb-4 uppercase tracking-widest text-xl" maxlength="4">
-                <button id="join-game-btn" class="btn btn-primary w-full mb-2">Enter Lobby</button>
-                <button id="back-to-main-btn" class="btn btn-secondary w-full">Back</button>
+             <h2 class="font-title text-5xl text-white">Join a Sit-Down</h2>
+             <div class="container-bg p-6 rounded-lg">
+                <input id="game-code-input" type="text" placeholder="Enter 4-Digit Code" class="input-field w-full text-center mb-4 uppercase tracking-widest text-xl p-3 rounded-sm" maxlength="4">
+                <button id="join-game-btn" class="btn btn-primary w-full mb-2">Enter Speakeasy</button>
+                <button id="back-to-main-btn" class="btn btn-secondary w-full">Go Back</button>
             </div>
         </div>
 
         <!-- Lobby Screen -->
         <div id="lobby-screen" class="screen space-y-4">
-            <h2 class="font-title text-5xl text-center text-white">Lobby</h2>
-            <div class="bg-gray-800 p-4 rounded-xl shadow-2xl text-center">
-                <p class="text-gray-400">Share this code with your friends:</p>
-                <div id="game-code-display" class="text-4xl font-bold tracking-widest bg-gray-900 p-3 rounded-lg my-2 cursor-pointer" title="Click to copy">
+            <h2 class="font-title text-5xl text-center text-white">The Speakeasy</h2>
+            <div class="container-bg p-4 rounded-lg text-center">
+                <p class="text-gray-400">Pass this code to your associates:</p>
+                <div id="game-code-display" class="text-4xl font-bold tracking-widest bg-black/50 p-3 rounded-sm my-2 cursor-pointer border-2 border-gray-600" title="Click to copy">
                     ----
                 </div>
             </div>
-            <div class="bg-gray-800 p-4 rounded-xl shadow-2xl">
-                <h3 class="text-xl font-semibold mb-3 text-center">Players (<span id="player-count">0</span>)</h3>
-                <ul id="player-list" class="space-y-2">
-                    <!-- Player items will be injected here -->
-                </ul>
+            <div class="container-bg p-4 rounded-lg">
+                <h3 class="text-xl font-semibold mb-3 text-center">Associates (<span id="player-count">0</span>)</h3>
+                <ul id="player-list" class="space-y-2"></ul>
             </div>
-            <button id="start-game-btn" class="btn btn-primary w-full">Start Game</button>
+            <button id="start-game-btn" class="btn btn-primary w-full">Begin the Operation</button>
         </div>
 
         <!-- Game Screen -->
         <div id="game-screen" class="screen w-full max-w-lg mx-auto space-y-4">
-            <div class="bg-gray-800 p-4 rounded-xl shadow-2xl flex justify-between items-center">
+            <div class="container-bg p-4 rounded-lg flex justify-between items-center">
                 <div>
-                    <h2 id="game-phase-display" class="font-title text-3xl text-indigo-300"></h2>
+                    <h2 id="game-phase-display" class="font-title text-3xl text-red-600"></h2>
                     <p id="day-number-display" class="text-gray-400"></p>
                 </div>
                 <div id="player-role-container" class="text-right">
@@ -132,32 +204,58 @@
                 </div>
             </div>
             
-            <div id="narrative-area" class="bg-gray-800 p-4 rounded-xl shadow-2xl text-center">
+            <div id="narrative-area" class="container-bg p-4 rounded-lg text-center">
                 <p id="narrative-message" class="text-lg text-gray-300 italic"></p>
             </div>
 
-            <div class="bg-gray-800 p-4 rounded-xl shadow-2xl">
-                 <h3 class="text-xl font-semibold mb-3 text-center">The Townspeople</h3>
-                 <div id="game-player-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <!-- Player cards will be injected here -->
-                 </div>
+            <div class="container-bg p-4 rounded-lg">
+                 <h3 class="text-xl font-semibold mb-3 text-center">The Usual Suspects</h3>
+                 <div id="game-player-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
             </div>
             
-             <div id="action-area" class="bg-gray-900/50 p-4 rounded-xl text-center">
-                <p id="action-prompt" class="text-lg mb-4 text-indigo-300"></p>
+             <div id="action-area" class="bg-black/20 p-4 rounded-lg text-center">
+                <p id="action-prompt" class="text-lg mb-4 text-gray-300"></p>
             </div>
         </div>
         
         <!-- Game Over Screen -->
         <div id="game-over-screen" class="screen text-center space-y-4">
-            <h2 class="font-title text-6xl text-white">Game Over</h2>
-            <div class="bg-gray-800 p-6 rounded-xl shadow-2xl">
-                <p id="winner-announcement" class="text-2xl mb-4 text-indigo-300"></p>
-                <h3 class="text-xl font-semibold mb-2 border-b border-gray-700 pb-2">Final Roles</h3>
-                <ul id="final-roles-list" class="space-y-2 text-left pt-2">
-                    <!-- Final roles will be listed here -->
-                </ul>
-                <button id="play-again-btn" class="btn btn-primary w-full mt-6">Play Again</button>
+            <h2 class="font-title text-6xl text-white">The End of the Line</h2>
+            <div class="container-bg p-6 rounded-lg">
+                <p id="winner-announcement" class="text-2xl mb-4 text-red-500"></p>
+                <h3 class="text-xl font-semibold mb-2 border-b border-gray-700 pb-2">Final Dossiers</h3>
+                <ul id="final-roles-list" class="space-y-2 text-left pt-2"></ul>
+                <button id="play-again-btn" class="btn btn-primary w-full mt-6">Start a New Operation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rulebook Button and Modal -->
+    <button id="rulebook-btn">📖</button>
+    <div id="rulebook-modal">
+        <div class="rulebook-content">
+            <span id="rulebook-close-btn">&times;</span>
+            <h2 class="font-title text-4xl text-center mb-4 text-red-800">The Rules</h2>
+            <div class="space-y-4 text-left">
+                <div>
+                    <h3 class="font-bold text-lg">Objective</h3>
+                    <p><strong>The Townspeople</strong> win by eliminating all Mafia members. <strong>The Mafia</strong> wins when they equal or outnumber the Townspeople.</p>
+                </div>
+                <hr class="border-gray-400">
+                <div>
+                    <h3 class="font-bold text-lg">The Roles</h3>
+                    <ul class="list-disc list-inside space-y-2">
+                        <li><strong>🔪 Mafia:</strong> A member of the family. Each night, the Mafia secretly chooses one person to eliminate.</li>
+                        <li><strong>⭐ Sheriff:</strong> A lawman in a lawless town. Each night, you may investigate one person to see if they are Mafia or not.</li>
+                        <li><strong>⚕️ Doctor:</strong> A back-alley surgeon. Each night, you may choose one person to save. If the Mafia targets that person, they will survive.</li>
+                        <li><strong>👤 Townsperson:</strong> An ordinary citizen caught in the crossfire. Your only tool is your intuition. Use the daytime to find and vote out the Mafia.</li>
+                    </ul>
+                </div>
+                <hr class="border-gray-400">
+                <div>
+                    <h3 class="font-bold text-lg">Game Flow</h3>
+                    <p>The game alternates between <strong>Night</strong> and <strong>Day</strong>. At night, the Mafia, Sheriff, and Doctor perform their actions. During the day, all players discuss and vote to eliminate one suspect.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -197,10 +295,7 @@
         };
         
         const ROLE_ICONS = {
-            'Mafia': '🔪',
-            'Doctor': '❤️‍🩹',
-            'Sheriff': '🔎',
-            'Townsperson': '👤'
+            'Mafia': '🔪', 'Doctor': '⚕️', 'Sheriff': '⭐', 'Townsperson': '👤'
         };
 
         function showAlert(message, type = 'success', duration = 3000) {
@@ -216,9 +311,8 @@
         }
 
         async function initializeAuth() {
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
+            try { await signInAnonymously(auth); } 
+            catch (error) {
                 console.error("Authentication failed:", error);
                 if (error.code === 'auth/configuration-not-found') {
                     showAlert("SETUP NEEDED: Enable Anonymous Sign-In in your Firebase Console.", "error", 10000); 
@@ -228,17 +322,30 @@
             }
         }
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) currentUserId = user.uid;
-        });
+        onAuthStateChanged(auth, (user) => { if (user) currentUserId = user.uid; });
 
         function showScreen(screenName) {
             Object.values(screens).forEach(screen => screen.classList.remove('visible'));
-            if (screens[screenName]) {
-                screens[screenName].classList.remove('hidden');
-                setTimeout(() => screens[screenName].classList.add('visible'), 50);
+            const activeScreen = screens[screenName];
+            if (activeScreen) {
+                Object.values(screens).forEach(s => { if (s !== activeScreen) s.classList.add('hidden'); });
+                activeScreen.classList.remove('hidden');
+                setTimeout(() => activeScreen.classList.add('visible'), 50);
             }
         }
+
+        // --- RULEBOOK EVENT LISTENERS ---
+        const rulebookBtn = document.getElementById('rulebook-btn');
+        const rulebookModal = document.getElementById('rulebook-modal');
+        const rulebookCloseBtn = document.getElementById('rulebook-close-btn');
+
+        rulebookBtn.addEventListener('click', () => rulebookModal.classList.add('visible'));
+        rulebookCloseBtn.addEventListener('click', () => rulebookModal.classList.remove('visible'));
+        rulebookModal.addEventListener('click', (e) => {
+            if (e.target === rulebookModal) {
+                rulebookModal.classList.remove('visible');
+            }
+        });
 
         document.getElementById('create-game-view-btn').addEventListener('click', createGame);
         document.getElementById('join-game-view-btn').addEventListener('click', () => showScreen('join'));
@@ -254,83 +361,51 @@
 
         function getUsername() {
             const username = document.getElementById('username-input').value.trim();
-            if (!username) {
-                showAlert("Please enter a name.", "error");
-                return null;
-            }
+            if (!username) { showAlert("An associate needs an alias.", "error"); return null; }
             return username;
         }
 
         async function createGame() {
-            const username = getUsername();
-            if (!username || !currentUserId) return;
-
-            const gameCode = generateGameCode();
-            currentGameCode = gameCode;
+            const username = getUsername(); if (!username || !currentUserId) return;
+            const gameCode = generateGameCode(); currentGameCode = gameCode;
             const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, gameCode);
             const newPlayer = { userId: currentUserId, name: username, isAlive: true, role: 'Unassigned' };
             const newGameData = {
                 gameId: gameCode, hostId: currentUserId, players: [newPlayer],
                 gameState: 'lobby', dayNumber: 1, nightActions: {}, votes: {},
-                narrative: 'Waiting for players to assemble...', winner: null,
+                narrative: 'Waiting for associates to arrive...', winner: null,
             };
-
-            try {
-                await setDoc(gameRef, newGameData);
-                listenToGameUpdates(gameCode);
-            } catch (error) {
-                console.error("Error creating game:", error);
-                showAlert("Could not create game.", "error");
-            }
+            try { await setDoc(gameRef, newGameData); listenToGameUpdates(gameCode); } 
+            catch (error) { console.error("Error creating game:", error); showAlert("Could not create game.", "error"); }
         }
 
         async function joinGame() {
-            const username = getUsername();
-            if (!username) return;
-            
+            const username = getUsername(); if (!username) return;
             const gameCode = document.getElementById('game-code-input').value.trim().toUpperCase();
-            if (gameCode.length !== 4) {
-                showAlert("Please enter a valid 4-letter code.", "error");
-                return;
-            }
-
+            if (gameCode.length !== 4) { showAlert("A proper 4-digit code is required.", "error"); return; }
             const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, gameCode);
             try {
                 const gameSnap = await getDoc(gameRef);
-                if (!gameSnap.exists()) {
-                    showAlert("Game not found.", "error"); return;
-                }
-
+                if (!gameSnap.exists()) { showAlert("This speakeasy doesn't exist.", "error"); return; }
                 const gameData = gameSnap.data();
-                if (gameData.gameState !== 'lobby') {
-                    showAlert("This game has already started.", "error"); return;
-                }
-                
+                if (gameData.gameState !== 'lobby') { showAlert("The sit-down has already begun.", "error"); return; }
                 if (!gameData.players.some(p => p.userId === currentUserId)) {
                     const newPlayer = { userId: currentUserId, name: username, isAlive: true, role: 'Unassigned' };
                     await updateDoc(gameRef, { players: [...gameData.players, newPlayer] });
                 }
-
-                currentGameCode = gameCode;
-                listenToGameUpdates(gameCode);
-            } catch (error) {
-                console.error("Error joining game:", error);
-                showAlert("Could not join game.", "error");
-            }
+                currentGameCode = gameCode; listenToGameUpdates(gameCode);
+            } catch (error) { console.error("Error joining game:", error); showAlert("Couldn't get you in. Check the code.", "error"); }
         }
         
         function listenToGameUpdates(gameCode) {
             if (unsubscribeGameListener) unsubscribeGameListener();
             const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, gameCode);
             unsubscribeGameListener = onSnapshot(gameRef, (doc) => {
-                if (doc.exists()) {
-                    localGameState = doc.data();
-                    updateUI(localGameState);
-                } else {
-                    showAlert("The game has ended or was deleted.", "error");
+                if (doc.exists()) { localGameState = doc.data(); updateUI(localGameState); } 
+                else {
+                    showAlert("The operation was shut down.", "error");
                     if (unsubscribeGameListener) unsubscribeGameListener();
-                    resetLocalState();
-                    showScreen('initial');
+                    resetLocalState(); showScreen('initial');
                 }
             });
         }
@@ -346,24 +421,22 @@
         function updateLobbyUI(gameData) {
             document.getElementById('game-code-display').textContent = gameData.gameId;
             document.getElementById('player-count').textContent = gameData.players.length;
-            
             const playerList = document.getElementById('player-list');
             playerList.innerHTML = '';
             gameData.players.forEach(player => {
                 const li = document.createElement('li');
-                li.className = 'bg-gray-700 p-3 rounded-lg flex justify-between items-center';
+                li.className = 'bg-gray-800/50 p-3 rounded-sm flex justify-between items-center';
                 li.innerHTML = `<span>${player.name}</span>`;
                 if (player.userId === gameData.hostId) {
-                    li.innerHTML += `<span class="text-xs bg-indigo-500 px-2 py-1 rounded-full">Host</span>`;
+                    li.innerHTML += `<span class="text-xs text-red-400 font-bold tracking-wider">THE DON</span>`;
                 }
                 playerList.appendChild(li);
             });
-            
             const startGameBtn = document.getElementById('start-game-btn');
             if (gameData.hostId === currentUserId) {
                 startGameBtn.classList.remove('hidden');
                 startGameBtn.disabled = gameData.players.length < 3;
-                startGameBtn.textContent = gameData.players.length < 3 ? 'Need at least 3 players' : 'Start Game';
+                startGameBtn.textContent = gameData.players.length < 3 ? 'Need at least 3 associates' : 'Begin the Operation';
             } else {
                 startGameBtn.classList.add('hidden');
             }
@@ -371,12 +444,10 @@
 
         async function startGame() {
             if (localGameState.hostId !== currentUserId) return;
-            
             const players = localGameState.players;
             const roles = assignRoles(players.length);
             const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
             shuffledPlayers.forEach((p, i) => p.role = roles[i]);
-
             const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode);
             await updateDoc(gameRef, {
                 players: shuffledPlayers, gameState: 'night',
@@ -394,28 +465,24 @@
         }
         
         function updateGameUI(gameData) {
-            const me = gameData.players.find(p => p.userId === currentUserId);
-            if (!me) return;
-
+            const me = gameData.players.find(p => p.userId === currentUserId); if (!me) return;
             document.getElementById('day-number-display').textContent = `Day ${gameData.dayNumber}`;
             document.getElementById('player-role-display').textContent = me.role;
             document.getElementById('player-role-icon').textContent = ROLE_ICONS[me.role];
-            document.getElementById('game-phase-display').textContent = gameData.gameState === 'day' ? "Daytime" : "Nightfall";
+            document.getElementById('game-phase-display').textContent = gameData.gameState === 'day' ? "Daylight Accusations" : "The Dead of Night";
             document.getElementById('narrative-message').textContent = gameData.narrative;
-
             const playerGrid = document.getElementById('game-player-grid');
             playerGrid.innerHTML = '';
             gameData.players.forEach(player => {
                 const card = document.createElement('button');
-                card.className = 'card bg-gray-700 p-3 rounded-lg text-center flex flex-col items-center justify-center space-y-1';
+                card.className = 'card p-3 rounded-lg text-center flex flex-col items-center justify-center space-y-1';
                 card.dataset.userId = player.userId;
-                card.innerHTML = `<div class="font-semibold">${player.name}</div>`;
+                card.innerHTML = `<div class="font-bold">${player.name}</div>`;
                 if (!player.isAlive) card.classList.add('eliminated');
-
                 if (gameData.gameState === 'day') {
                     const votesForPlayer = Object.values(gameData.votes || {}).filter(v => v === player.userId).length;
                     if (votesForPlayer > 0) {
-                        card.innerHTML += `<div class="text-xs mt-1 bg-red-600 rounded-full px-2 py-0.5">${votesForPlayer} Vote(s)</div>`;
+                        card.innerHTML += `<div class="text-xs mt-1 bg-red-800 rounded-full px-2 py-0.5">${votesForPlayer} Vote(s)</div>`;
                     }
                 }
                 playerGrid.appendChild(card);
@@ -426,53 +493,31 @@
         function handlePlayerActions(gameData, me) {
             const actionPrompt = document.getElementById('action-prompt');
             const playerGrid = document.getElementById('game-player-grid');
-            let actionType = null;
-            let promptText = '';
-            let eligibleTargets = [];
-
-            if (!me.isAlive) {
-                promptText = "You have been eliminated.";
-            } else if (gameData.gameState === 'night') {
-                const nightActions = gameData.nightActions || {};
+            let actionType = null, promptText = '', eligibleTargets = [];
+            if (!me.isAlive) { promptText = "You've been whacked. You can only watch."; }
+            else if (gameData.gameState === 'night') {
+                const actions = gameData.nightActions || {};
                 switch (me.role) {
                     case 'Mafia':
-                        if (!nightActions.mafiaTarget) {
-                            actionType = 'mafiaKill';
-                            promptText = 'Choose a player to eliminate.';
-                            // FIX: Mafia cannot target other Mafia or themselves
-                            eligibleTargets = gameData.players.filter(p => p.isAlive && p.role !== 'Mafia');
-                        } else { promptText = 'The hit is planned. Waiting for dawn...'; }
+                        if (!actions.mafiaTarget) { actionType = 'mafiaKill'; promptText = 'Mark someone to be eliminated.'; eligibleTargets = gameData.players.filter(p => p.isAlive && p.role !== 'Mafia'); }
+                        else { promptText = 'The hit is planned. Wait for morning...'; }
                         break;
                     case 'Doctor':
-                         if (!nightActions.doctorSave) {
-                            actionType = 'doctorSave'; promptText = 'Choose a player to save.';
-                            eligibleTargets = gameData.players.filter(p => p.isAlive);
-                        } else { promptText = 'You have made your house call. Waiting for dawn...'; }
+                         if (!actions.doctorSave) { actionType = 'doctorSave'; promptText = 'Choose someone to protect.'; eligibleTargets = gameData.players.filter(p => p.isAlive); }
+                         else { promptText = 'You have made your house call. Wait for morning...'; }
                         break;
                     case 'Sheriff':
-                         if (!nightActions.sheriffCheck) {
-                            actionType = 'sheriffCheck'; promptText = 'Choose a player to investigate.';
-                            eligibleTargets = gameData.players.filter(p => p.isAlive && p.userId !== currentUserId);
-                        } else {
-                             const checkedPlayer = gameData.players.find(p => p.userId === nightActions.sheriffCheck);
-                             promptText = `Your investigation reveals ${checkedPlayer.name} is ${checkedPlayer.role === 'Mafia' ? 'part of the Mafia' : 'not part of the Mafia'}.`;
-                        }
+                         if (!actions.sheriffCheck) { actionType = 'sheriffCheck'; promptText = 'Investigate a suspect.'; eligibleTargets = gameData.players.filter(p => p.isAlive && p.userId !== currentUserId); } 
+                         else { const suspect = gameData.players.find(p => p.userId === actions.sheriffCheck); promptText = `Your investigation reveals ${suspect.name} is ${suspect.role === 'Mafia' ? 'dirty' : 'clean'}.`; }
                         break;
-                    default: promptText = 'The town sleeps, but you are restless...';
+                    default: promptText = 'The city sleeps, but you are restless...';
                 }
             } else if (gameData.gameState === 'day') {
                 const votes = gameData.votes || {};
-                if (!votes[currentUserId]) {
-                    actionType = 'vote'; promptText = 'Discuss, then cast your vote to eliminate a suspect.';
-                    eligibleTargets = gameData.players.filter(p => p.isAlive);
-                } else {
-                    const votedPlayer = gameData.players.find(p => p.userId === votes[currentUserId]);
-                    promptText = `You have voted for ${votedPlayer.name}. The town awaits a decision.`;
-                }
+                if (!votes[currentUserId]) { actionType = 'vote'; promptText = 'Point the finger. Vote to eliminate a suspect.'; eligibleTargets = gameData.players.filter(p => p.isAlive); }
+                else { const votedFor = gameData.players.find(p => p.userId === votes[currentUserId]); promptText = `You have cast your vote for ${votedFor.name}. The decision is nearly made.`; }
             }
-
             actionPrompt.textContent = promptText;
-            
             playerGrid.querySelectorAll('button').forEach(card => {
                 const cardUserId = card.dataset.userId;
                 const isEligible = eligibleTargets.some(p => p.userId === cardUserId);
@@ -480,15 +525,11 @@
                 card.onclick = isEligible ? () => handleCardClick(cardUserId, actionType) : null;
                 card.classList.toggle('selectable', isEligible);
             });
-            
-            if (localGameState.hostId === currentUserId) {
-                checkAndProcessPhaseEnd(gameData);
-            }
+            if (localGameState.hostId === currentUserId) checkAndProcessPhaseEnd(gameData);
         }
         
         async function handleCardClick(targetUserId, actionType) {
-            if (!actionType) return;
-            const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode);
+            if (!actionType) return; const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode);
             let payload = {};
             if (actionType === 'mafiaKill') payload['nightActions.mafiaTarget'] = targetUserId;
             else if (actionType === 'doctorSave') payload['nightActions.doctorSave'] = targetUserId;
@@ -507,7 +548,7 @@
                 const docDone = !living.some(p => p.role === 'Doctor') || !!actions.doctorSave;
                 const sheriffDone = !living.some(p => p.role === 'Sheriff') || !!actions.sheriffCheck;
                 if (mafiaDone && docDone && sheriffDone) await processNight(gameData);
-            } else if (gameData.gameState === 'day') {
+} else if (gameData.gameState === 'day') {
                 const votes = gameData.votes || {};
                 const livingIds = living.map(p => p.userId);
                 const votesCast = Object.keys(votes).filter(id => livingIds.includes(id)).length;
@@ -526,8 +567,7 @@
             const narrative = getNarrative(killedPlayer ? 'dayStartWithKill' : 'dayStartNoKill', { victim: killedPlayer });
             const winner = checkWinCondition(updatedPlayers);
             await updateDoc(doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode), {
-                players: updatedPlayers, gameState: winner ? 'game-over' : 'day',
-                winner, narrative
+                players: updatedPlayers, gameState: winner ? 'game-over' : 'day', winner, narrative
             });
         }
         
@@ -535,91 +575,71 @@
             const { votes, players } = gameData;
             const voteCounts = {};
             Object.values(votes).forEach(id => voteCounts[id] = (voteCounts[id] || 0) + 1);
-            let maxVotes = 0;
-            let playersToEliminate = [];
+            let maxVotes = 0, playersToEliminate = [];
             for (const userId in voteCounts) {
-                if (voteCounts[userId] > maxVotes) {
-                    maxVotes = voteCounts[userId]; playersToEliminate = [userId];
-                } else if (voteCounts[userId] === maxVotes) {
-                    playersToEliminate.push(userId);
-                }
+                if (voteCounts[userId] > maxVotes) { maxVotes = voteCounts[userId]; playersToEliminate = [userId]; }
+                else if (voteCounts[userId] === maxVotes) { playersToEliminate.push(userId); }
             }
-
             let eliminatedPlayer = playersToEliminate.length === 1 ? players.find(p => p.userId === playersToEliminate[0]) : null;
             const updatedPlayers = players.map(p => ({...p, isAlive: p.isAlive && (!eliminatedPlayer || p.userId !== eliminatedPlayer.userId)}));
             const narrative = getNarrative(eliminatedPlayer ? 'playerEliminated' : 'voteTie', { eliminated: eliminatedPlayer });
             const winner = checkWinCondition(updatedPlayers);
-            
             await updateDoc(doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode), {
                 players: updatedPlayers, gameState: winner ? 'game-over' : 'night',
-                winner, dayNumber: gameData.dayNumber + 1,
-                narrative, nightActions: {}, votes: {},
+                winner, dayNumber: gameData.dayNumber + 1, narrative, nightActions: {}, votes: {},
             });
         }
         
         function checkWinCondition(players) {
             const living = players.filter(p => p.isAlive);
             const mafiaCount = living.filter(p => p.role === 'Mafia').length;
-            const townCount = living.length - mafiaCount;
-            if (mafiaCount === 0) return 'The Town';
-            if (mafiaCount >= townCount) return 'The Mafia';
+            if (mafiaCount === 0) return 'The Townspeople';
+            if (mafiaCount >= (living.length - mafiaCount)) return 'The Mafia';
             return null;
         }
 
         function getNarrative(event, data = {}) {
             switch (event) {
-                case 'nightStart': return "Night falls, and a chilling silence descends upon the town. Eyes closed, everyone awaits the dawn, hoping to see it.";
-                case 'dayStartWithKill': return `A grim morning. The town awakens to find ${data.victim.name} has been murdered. Their role was a ${data.victim.role}.`;
-                case 'dayStartNoKill': return "A miracle! The sun rises and everyone is safe. The Mafia's plans were thwarted last night.";
-                case 'playerEliminated': return `Accusations flew, and the town has made its decision. ${data.eliminated.name} has been eliminated. They were a ${data.eliminated.role}.`;
-                case 'voteTie': return "The town is divided. With a tied vote, no one is eliminated, and a nervous tension fills the air as night approaches again.";
+                case 'nightStart': return "A thick fog rolls over the city. The Don has given the order. The family goes to work while the town sleeps.";
+                case 'dayStartWithKill': return `Dawn breaks. The body of ${data.victim.name} was found down by the docks. Word on the street is they were a ${data.victim.role}.`;
+                case 'dayStartNoKill': return "The sun rises on a surprisingly peaceful morning. Someone was lucky last night. Or maybe the hit was botched.";
+                case 'playerEliminated': return `After heated arguments, the town turns on one of their own. ${data.eliminated.name} is taken for a one-way ride. They were a ${data.eliminated.role}.`;
+                case 'voteTie': return "The town is in chaos, unable to reach a decision. The suspect walks free... for now. Night is falling once again.";
                 default: return "The story continues...";
             }
         }
         
         function updateGameOverUI(gameData) {
-            document.getElementById('winner-announcement').textContent = `${gameData.winner} wins!`;
-            const list = document.getElementById('final-roles-list');
-            list.innerHTML = '';
+            document.getElementById('winner-announcement').textContent = `${gameData.winner} now run this town.`;
+            const list = document.getElementById('final-roles-list'); list.innerHTML = '';
             gameData.players.forEach(p => {
                 const li = document.createElement('li');
-                li.className = 'flex items-center justify-between p-2 bg-gray-700 rounded-md';
+                li.className = 'flex items-center justify-between p-2 bg-gray-900/50 rounded-sm';
                 li.innerHTML = `<span>${p.name}</span> <span class="font-bold">${ROLE_ICONS[p.role]} ${p.role}</span>`;
                 list.appendChild(li);
             });
         }
 
-        function generateGameCode() {
-            return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').sort(() => 0.5 - Math.random()).slice(0, 4).join('');
-        }
+        function generateGameCode() { return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').sort(() => 0.5 - Math.random()).slice(0, 4).join(''); }
         
         function copyGameCode() {
             const code = document.getElementById('game-code-display').textContent;
             const textArea = document.createElement("textarea");
-            textArea.value = code;
-            textArea.style.position = "fixed"; textArea.style.left = "-9999px";
-            document.body.appendChild(textArea);
-            textArea.focus(); textArea.select();
-            try {
-                document.execCommand('copy');
-                showAlert(`Game code "${code}" copied!`);
-            } catch (err) { showAlert('Failed to copy code.', 'error'); }
+            textArea.value = code; textArea.style.position = "fixed"; textArea.style.left = "-9999px";
+            document.body.appendChild(textArea); textArea.focus(); textArea.select();
+            try { document.execCommand('copy'); showAlert(`Code "${code}" copied!`); }
+            catch (err) { showAlert('Failed to copy code.', 'error'); }
             document.body.removeChild(textArea);
         }
         
         function resetLocalState() {
             currentUserId = auth.currentUser ? auth.currentUser.uid : null;
-            currentGameCode = null;
-            unsubscribeGameListener = null;
-            localGameState = {};
+            currentGameCode = null; unsubscribeGameListener = null; localGameState = {};
             document.getElementById('username-input').value = '';
             document.getElementById('game-code-input').value = '';
         }
 
-        async function init() {
-            await initializeAuth();
-            showScreen('initial');
-        }
+        async function init() { await initializeAuth(); showScreen('initial'); }
 
         init();
     </script>
