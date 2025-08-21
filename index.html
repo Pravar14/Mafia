@@ -3,36 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Online Mafia Game</title>
+    <title>Mafia - The Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Roboto', sans-serif;
+            background-color: #111827; /* Tailwind gray-900 */
+        }
+        .font-title {
+            font-family: 'Playfair Display', serif;
         }
         .hidden { display: none; }
-        .card {
-            transition: transform 0.2s, box-shadow 0.2s;
+        .screen {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            will-change: opacity;
         }
-        .card:hover:not(:disabled) {
+        .screen.visible {
+            opacity: 1;
+        }
+        .card {
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+            border: 2px solid transparent;
+        }
+        .card.selectable:hover:not(:disabled) {
             transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+            border-color: #818cf8; /* Indigo-400 */
+        }
+        .card.eliminated {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+        .btn {
+            transition: all 0.2s ease-in-out;
         }
         .btn-primary {
-            @apply bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+            @apply bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-indigo-700 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
         }
         .btn-secondary {
-            @apply bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-700 transition-all duration-200;
-        }
-        .btn-danger {
-            @apply bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-all duration-200;
+            @apply bg-gray-700 text-gray-300 font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-gray-600 transform hover:-translate-y-0.5;
         }
         .input-field {
-            @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500;
+            @apply w-full px-4 py-3 bg-gray-200 text-gray-900 border-2 border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent;
         }
         .custom-alert {
             position: fixed;
-            top: 1rem;
+            top: 1.5rem;
             left: 50%;
             transform: translateX(-50%);
             padding: 0.75rem 1.25rem;
@@ -46,117 +66,108 @@
             max-width: 90%;
             text-align: center;
         }
-        .custom-alert.show {
-            opacity: 1;
-        }
-        .custom-alert.success {
-            background-color: #28a745; /* Green */
-        }
-        .custom-alert.error {
-            background-color: #dc3545; /* Red */
-        }
+        .custom-alert.show { opacity: 1; }
+        .custom-alert.success { background-color: #28a745; }
+        .custom-alert.error { background-color: #dc3545; }
     </style>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+<body class="text-gray-200 flex items-center justify-center min-h-screen p-4">
 
-    <div id="app-container" class="w-full max-w-md mx-auto p-4">
+    <div id="app-container" class="w-full max-w-md mx-auto">
 
-        <!-- Initial Screen: Create or Join Game -->
-        <div id="initial-screen" class="text-center space-y-4">
-            <h1 class="text-5xl font-bold text-indigo-400">MAFIA</h1>
-            <p class="text-gray-400">The Online Social Deduction Game</p>
-            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                <input id="username-input" type="text" placeholder="Enter your name" class="input-field text-black text-center mb-4">
-                <button id="create-game-btn" class="btn-primary w-full mb-2">Create New Game</button>
-                <button id="join-game-view-btn" class="btn-secondary w-full">Join Existing Game</button>
+        <!-- Initial Screen -->
+        <div id="initial-screen" class="screen text-center space-y-6">
+            <h1 class="font-title text-7xl text-white">Mafia</h1>
+            <p class="text-indigo-300 text-lg">A game of deception and survival.</p>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-2xl">
+                <input id="username-input" type="text" placeholder="Enter Your Name" class="input-field text-center mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button id="create-game-view-btn" class="btn btn-primary">Create Game</button>
+                    <button id="join-game-view-btn" class="btn btn-secondary">Join Game</button>
+                </div>
             </div>
         </div>
         
         <!-- Join Game Screen -->
-        <div id="join-game-screen" class="hidden text-center space-y-4">
-             <h2 class="text-3xl font-bold text-indigo-400">Join Game</h2>
-             <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                <input id="game-code-input" type="text" placeholder="Enter 4-letter game code" class="input-field text-black text-center mb-4 uppercase" maxlength="4">
-                <button id="join-game-btn" class="btn-primary w-full mb-2">Join Game</button>
-                <button id="back-to-main-btn" class="btn-secondary w-full">Back</button>
+        <div id="join-game-screen" class="screen text-center space-y-6">
+             <h2 class="font-title text-5xl text-white">Join a Game</h2>
+             <div class="bg-gray-800 p-6 rounded-xl shadow-2xl">
+                <input id="game-code-input" type="text" placeholder="Enter 4-Letter Code" class="input-field text-center mb-4 uppercase tracking-widest text-xl" maxlength="4">
+                <button id="join-game-btn" class="btn btn-primary w-full mb-2">Enter Lobby</button>
+                <button id="back-to-main-btn" class="btn btn-secondary w-full">Back</button>
             </div>
         </div>
 
         <!-- Lobby Screen -->
-        <div id="lobby-screen" class="hidden space-y-4">
-            <h2 class="text-3xl font-bold text-center text-indigo-400">Lobby</h2>
-            <div class="bg-gray-800 p-4 rounded-lg shadow-lg text-center">
+        <div id="lobby-screen" class="screen space-y-4">
+            <h2 class="font-title text-5xl text-center text-white">Lobby</h2>
+            <div class="bg-gray-800 p-4 rounded-xl shadow-2xl text-center">
                 <p class="text-gray-400">Share this code with your friends:</p>
-                <div id="game-code-display" class="text-4xl font-bold tracking-widest bg-gray-700 p-2 rounded-lg my-2 cursor-pointer" title="Click to copy">
+                <div id="game-code-display" class="text-4xl font-bold tracking-widest bg-gray-900 p-3 rounded-lg my-2 cursor-pointer" title="Click to copy">
                     ----
                 </div>
             </div>
-            <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
-                <h3 class="text-xl font-semibold mb-2 text-center">Players (<span id="player-count">0</span>)</h3>
+            <div class="bg-gray-800 p-4 rounded-xl shadow-2xl">
+                <h3 class="text-xl font-semibold mb-3 text-center">Players (<span id="player-count">0</span>)</h3>
                 <ul id="player-list" class="space-y-2">
                     <!-- Player items will be injected here -->
                 </ul>
             </div>
-            <button id="start-game-btn" class="btn-primary w-full hidden">Start Game</button>
+            <button id="start-game-btn" class="btn btn-primary w-full">Start Game</button>
         </div>
 
         <!-- Game Screen -->
-        <div id="game-screen" class="hidden w-full max-w-lg mx-auto p-4 space-y-4">
-            <!-- Game Header -->
-            <div class="bg-gray-800 p-4 rounded-lg shadow-lg flex justify-between items-center">
+        <div id="game-screen" class="screen w-full max-w-lg mx-auto space-y-4">
+            <div class="bg-gray-800 p-4 rounded-xl shadow-2xl flex justify-between items-center">
                 <div>
-                    <h2 id="game-phase-display" class="text-2xl font-bold text-indigo-400"></h2>
+                    <h2 id="game-phase-display" class="font-title text-3xl text-indigo-300"></h2>
                     <p id="day-number-display" class="text-gray-400"></p>
                 </div>
-                <div class="text-right">
-                    <p class="font-semibold">Your Role:</p>
-                    <p id="player-role-display" class="text-xl font-bold"></p>
+                <div id="player-role-container" class="text-right">
+                     <p class="font-semibold text-gray-400">Your Role</p>
+                     <div class="flex items-center justify-end gap-2">
+                        <span id="player-role-icon" class="text-2xl"></span>
+                        <span id="player-role-display" class="text-xl font-bold"></span>
+                     </div>
                 </div>
             </div>
             
-            <!-- Message/Announcement Area -->
-            <div id="announcement-area" class="bg-indigo-900/50 p-4 rounded-lg text-center hidden">
-                <p id="announcement-message" class="text-lg"></p>
+            <div id="narrative-area" class="bg-gray-800 p-4 rounded-xl shadow-2xl text-center">
+                <p id="narrative-message" class="text-lg text-gray-300 italic"></p>
             </div>
 
-            <!-- Player Grid -->
-            <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
-                 <h3 class="text-xl font-semibold mb-3 text-center">Living Players</h3>
+            <div class="bg-gray-800 p-4 rounded-xl shadow-2xl">
+                 <h3 class="text-xl font-semibold mb-3 text-center">The Townspeople</h3>
                  <div id="game-player-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <!-- Player cards will be injected here -->
                  </div>
             </div>
             
-             <!-- Action Area -->
-            <div id="action-area" class="bg-gray-800 p-4 rounded-lg shadow-lg text-center hidden">
-                <p id="action-prompt" class="text-lg mb-4"></p>
-                <button id="action-confirm-btn" class="btn-primary hidden"></button>
+             <div id="action-area" class="bg-gray-900/50 p-4 rounded-xl text-center">
+                <p id="action-prompt" class="text-lg mb-4 text-indigo-300"></p>
             </div>
         </div>
         
         <!-- Game Over Screen -->
-        <div id="game-over-screen" class="hidden text-center space-y-4">
-            <h2 class="text-4xl font-bold text-indigo-400">Game Over</h2>
-            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-                <p id="winner-announcement" class="text-2xl mb-4"></p>
-                <h3 class="text-xl font-semibold mb-2">Final Roles:</h3>
-                <ul id="final-roles-list" class="space-y-1 text-left">
+        <div id="game-over-screen" class="screen text-center space-y-4">
+            <h2 class="font-title text-6xl text-white">Game Over</h2>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-2xl">
+                <p id="winner-announcement" class="text-2xl mb-4 text-indigo-300"></p>
+                <h3 class="text-xl font-semibold mb-2 border-b border-gray-700 pb-2">Final Roles</h3>
+                <ul id="final-roles-list" class="space-y-2 text-left pt-2">
                     <!-- Final roles will be listed here -->
                 </ul>
-                <button id="play-again-btn" class="btn-primary w-full mt-6">Play Again</button>
+                <button id="play-again-btn" class="btn btn-primary w-full mt-6">Play Again</button>
             </div>
         </div>
-
     </div>
 
     <!-- Firebase -->
     <script type="module">
-        // --- FIREBASE IMPORTS AND CONFIG ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAm4nqYVq0zNKORe6zYVKGg-e7PKPvkPD8",
             authDomain: "mafia-95c73.firebaseapp.com",
@@ -166,21 +177,17 @@
             appId: "1:460118741722:web:ad6078c545af8ba54fcbe3",
             measurementId: "G-H6XYHNGLM3"
         };
-
         const appId = 'mafia-game-default';
 
-        // --- FIREBASE INITIALIZATION ---
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- GLOBAL STATE ---
         let currentUserId = null;
         let currentGameCode = null;
         let unsubscribeGameListener = null;
         let localGameState = {};
 
-        // --- UI ELEMENTS ---
         const screens = {
             initial: document.getElementById('initial-screen'),
             join: document.getElementById('join-game-screen'),
@@ -189,64 +196,51 @@
             gameOver: document.getElementById('game-over-screen'),
         };
         
-        // --- CUSTOM ALERT FUNCTION ---
+        const ROLE_ICONS = {
+            'Mafia': '🔪',
+            'Doctor': '❤️‍🩹',
+            'Sheriff': '🔎',
+            'Townsperson': '👤'
+        };
+
         function showAlert(message, type = 'success', duration = 3000) {
             const alertDiv = document.createElement('div');
             alertDiv.className = `custom-alert ${type}`;
             alertDiv.textContent = message;
             document.body.appendChild(alertDiv);
-            
-            // Trigger fade in
-            setTimeout(() => {
-                alertDiv.classList.add('show');
-            }, 10);
-
-            // Fade out and remove after specified duration
+            setTimeout(() => alertDiv.classList.add('show'), 10);
             setTimeout(() => {
                 alertDiv.classList.remove('show');
-                setTimeout(() => {
-                    alertDiv.remove();
-                }, 300);
+                setTimeout(() => alertDiv.remove(), 300);
             }, duration);
         }
 
-        // --- AUTHENTICATION ---
         async function initializeAuth() {
             try {
                 await signInAnonymously(auth);
             } catch (error) {
                 console.error("Authentication failed:", error);
-                let errorMessage = "Could not connect to the server. Please refresh.";
-                // Provide specific guidance for the most common setup error.
                 if (error.code === 'auth/configuration-not-found') {
-                    errorMessage = "SETUP NEEDED: Enable Anonymous Sign-In in your Firebase Console > Authentication > Sign-in method.";
-                    // Show this crucial alert for longer
-                    showAlert(errorMessage, "error", 10000); 
+                    showAlert("SETUP NEEDED: Enable Anonymous Sign-In in your Firebase Console.", "error", 10000); 
                 } else {
-                    showAlert(errorMessage, "error");
+                    showAlert("Could not connect to the server. Please refresh.", "error");
                 }
             }
         }
 
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUserId = user.uid;
-                console.log("Authenticated with user ID:", currentUserId);
-            } else {
-                console.log("User is signed out.");
-            }
+            if (user) currentUserId = user.uid;
         });
 
-        // --- UI NAVIGATION ---
         function showScreen(screenName) {
-            Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+            Object.values(screens).forEach(screen => screen.classList.remove('visible'));
             if (screens[screenName]) {
                 screens[screenName].classList.remove('hidden');
+                setTimeout(() => screens[screenName].classList.add('visible'), 50);
             }
         }
-        
-        // --- EVENT LISTENERS ---
-        document.getElementById('create-game-btn').addEventListener('click', createGame);
+
+        document.getElementById('create-game-view-btn').addEventListener('click', createGame);
         document.getElementById('join-game-view-btn').addEventListener('click', () => showScreen('join'));
         document.getElementById('back-to-main-btn').addEventListener('click', () => showScreen('initial'));
         document.getElementById('join-game-btn').addEventListener('click', joinGame);
@@ -257,9 +251,6 @@
             resetLocalState();
             showScreen('initial');
         });
-
-
-        // --- GAME LOGIC ---
 
         function getUsername() {
             const username = document.getElementById('username-input').value.trim();
@@ -277,33 +268,19 @@
             const gameCode = generateGameCode();
             currentGameCode = gameCode;
             const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, gameCode);
-
-            const newPlayer = {
-                userId: currentUserId,
-                name: username,
-                isAlive: true,
-                role: 'Unassigned',
-            };
-
+            const newPlayer = { userId: currentUserId, name: username, isAlive: true, role: 'Unassigned' };
             const newGameData = {
-                gameId: gameCode,
-                hostId: currentUserId,
-                players: [newPlayer],
-                gameState: 'lobby',
-                dayNumber: 1,
-                nightActions: {},
-                votes: {},
-                announcement: '',
-                winner: null,
+                gameId: gameCode, hostId: currentUserId, players: [newPlayer],
+                gameState: 'lobby', dayNumber: 1, nightActions: {}, votes: {},
+                narrative: 'Waiting for players to assemble...', winner: null,
             };
 
             try {
                 await setDoc(gameRef, newGameData);
                 listenToGameUpdates(gameCode);
-                showScreen('lobby');
             } catch (error) {
                 console.error("Error creating game:", error);
-                showAlert("Could not create game. Please try again.", "error");
+                showAlert("Could not create game.", "error");
             }
         }
 
@@ -313,7 +290,7 @@
             
             const gameCode = document.getElementById('game-code-input').value.trim().toUpperCase();
             if (gameCode.length !== 4) {
-                showAlert("Please enter a valid 4-letter game code.", "error");
+                showAlert("Please enter a valid 4-letter code.", "error");
                 return;
             }
 
@@ -321,49 +298,34 @@
             try {
                 const gameSnap = await getDoc(gameRef);
                 if (!gameSnap.exists()) {
-                    showAlert("Game not found.", "error");
-                    return;
+                    showAlert("Game not found.", "error"); return;
                 }
 
                 const gameData = gameSnap.data();
                 if (gameData.gameState !== 'lobby') {
-                    showAlert("This game has already started.", "error");
-                    return;
+                    showAlert("This game has already started.", "error"); return;
                 }
                 
-                if (gameData.players.some(p => p.userId === currentUserId)) {
-                     // Player is rejoining, just listen
-                } else {
-                    const newPlayer = {
-                        userId: currentUserId,
-                        name: username,
-                        isAlive: true,
-                        role: 'Unassigned',
-                    };
-                    const updatedPlayers = [...gameData.players, newPlayer];
-                    await updateDoc(gameRef, { players: updatedPlayers });
+                if (!gameData.players.some(p => p.userId === currentUserId)) {
+                    const newPlayer = { userId: currentUserId, name: username, isAlive: true, role: 'Unassigned' };
+                    await updateDoc(gameRef, { players: [...gameData.players, newPlayer] });
                 }
 
                 currentGameCode = gameCode;
                 listenToGameUpdates(gameCode);
-                showScreen('lobby');
-
             } catch (error) {
                 console.error("Error joining game:", error);
-                showAlert("Could not join game. Check the code.", "error");
+                showAlert("Could not join game.", "error");
             }
         }
         
         function listenToGameUpdates(gameCode) {
-            if (unsubscribeGameListener) {
-                unsubscribeGameListener();
-            }
+            if (unsubscribeGameListener) unsubscribeGameListener();
             const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, gameCode);
             unsubscribeGameListener = onSnapshot(gameRef, (doc) => {
                 if (doc.exists()) {
-                    const gameData = doc.data();
-                    localGameState = gameData; // Store latest state
-                    updateUI(gameData);
+                    localGameState = doc.data();
+                    updateUI(localGameState);
                 } else {
                     showAlert("The game has ended or was deleted.", "error");
                     if (unsubscribeGameListener) unsubscribeGameListener();
@@ -374,21 +336,10 @@
         }
 
         function updateUI(gameData) {
-            // Update based on gameState
             switch (gameData.gameState) {
-                case 'lobby':
-                    updateLobbyUI(gameData);
-                    showScreen('lobby');
-                    break;
-                case 'night':
-                case 'day':
-                    updateGameUI(gameData);
-                    showScreen('game');
-                    break;
-                case 'game-over':
-                    updateGameOverUI(gameData);
-                    showScreen('gameOver');
-                    break;
+                case 'lobby': updateLobbyUI(gameData); showScreen('lobby'); break;
+                case 'night': case 'day': updateGameUI(gameData); showScreen('game'); break;
+                case 'game-over': updateGameOverUI(gameData); showScreen('gameOver'); break;
             }
         }
         
@@ -400,13 +351,10 @@
             playerList.innerHTML = '';
             gameData.players.forEach(player => {
                 const li = document.createElement('li');
-                li.className = 'bg-gray-700 p-2 rounded-md flex justify-between items-center';
-                li.textContent = player.name;
+                li.className = 'bg-gray-700 p-3 rounded-lg flex justify-between items-center';
+                li.innerHTML = `<span>${player.name}</span>`;
                 if (player.userId === gameData.hostId) {
-                    const hostTag = document.createElement('span');
-                    hostTag.className = 'text-xs bg-indigo-500 px-2 py-1 rounded-full';
-                    hostTag.textContent = 'Host';
-                    li.appendChild(hostTag);
+                    li.innerHTML += `<span class="text-xs bg-indigo-500 px-2 py-1 rounded-full">Host</span>`;
                 }
                 playerList.appendChild(li);
             });
@@ -414,13 +362,8 @@
             const startGameBtn = document.getElementById('start-game-btn');
             if (gameData.hostId === currentUserId) {
                 startGameBtn.classList.remove('hidden');
-                if (gameData.players.length < 3) { // Minimum players to start
-                    startGameBtn.disabled = true;
-                    startGameBtn.textContent = 'Need at least 3 players';
-                } else {
-                    startGameBtn.disabled = false;
-                    startGameBtn.textContent = 'Start Game';
-                }
+                startGameBtn.disabled = gameData.players.length < 3;
+                startGameBtn.textContent = gameData.players.length < 3 ? 'Need at least 3 players' : 'Start Game';
             } else {
                 startGameBtn.classList.add('hidden');
             }
@@ -432,42 +375,22 @@
             const players = localGameState.players;
             const roles = assignRoles(players.length);
             const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
-
-            for (let i = 0; i < shuffledPlayers.length; i++) {
-                shuffledPlayers[i].role = roles[i];
-            }
+            shuffledPlayers.forEach((p, i) => p.role = roles[i]);
 
             const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode);
-            try {
-                await updateDoc(gameRef, {
-                    players: shuffledPlayers,
-                    gameState: 'night',
-                    announcement: 'The first night begins... Silence falls over the town.'
-                });
-            } catch (error) {
-                console.error("Error starting game:", error);
-            }
+            await updateDoc(gameRef, {
+                players: shuffledPlayers, gameState: 'night',
+                narrative: getNarrative('nightStart')
+            });
         }
 
         function assignRoles(playerCount) {
             let roles = [];
-            if (playerCount < 5) { // 3-4 players
-                roles.push('Mafia');
-                roles.push('Sheriff');
-                roles.push('Doctor');
-            } else if (playerCount < 7) { // 5-6 players
-                roles.push('Mafia', 'Mafia');
-                roles.push('Sheriff');
-                roles.push('Doctor');
-            } else { // 7+ players
-                roles.push('Mafia', 'Mafia');
-                roles.push('Sheriff');
-                roles.push('Doctor');
-            }
-            while (roles.length < playerCount) {
-                roles.push('Townsperson');
-            }
-            return roles.sort(() => Math.random() - 0.5); // Shuffle roles
+            if (playerCount < 5) { roles.push('Mafia', 'Sheriff', 'Doctor'); } 
+            else if (playerCount < 7) { roles.push('Mafia', 'Mafia', 'Sheriff', 'Doctor'); } 
+            else { roles.push('Mafia', 'Mafia', 'Sheriff', 'Doctor'); }
+            while (roles.length < playerCount) { roles.push('Townsperson'); }
+            return roles.sort(() => Math.random() - 0.5);
         }
         
         function updateGameUI(gameData) {
@@ -476,42 +399,31 @@
 
             document.getElementById('day-number-display').textContent = `Day ${gameData.dayNumber}`;
             document.getElementById('player-role-display').textContent = me.role;
-            document.getElementById('game-phase-display').textContent = gameData.gameState.toUpperCase();
-            
-            const announcementArea = document.getElementById('announcement-area');
-            const announcementMessage = document.getElementById('announcement-message');
-            if (gameData.announcement) {
-                announcementMessage.textContent = gameData.announcement;
-                announcementArea.classList.remove('hidden');
-            } else {
-                announcementArea.classList.add('hidden');
-            }
+            document.getElementById('player-role-icon').textContent = ROLE_ICONS[me.role];
+            document.getElementById('game-phase-display').textContent = gameData.gameState === 'day' ? "Daytime" : "Nightfall";
+            document.getElementById('narrative-message').textContent = gameData.narrative;
 
             const playerGrid = document.getElementById('game-player-grid');
             playerGrid.innerHTML = '';
-            const livingPlayers = gameData.players.filter(p => p.isAlive);
-
-            livingPlayers.forEach(player => {
+            gameData.players.forEach(player => {
                 const card = document.createElement('button');
-                card.className = 'card bg-gray-700 p-3 rounded-lg text-center';
+                card.className = 'card bg-gray-700 p-3 rounded-lg text-center flex flex-col items-center justify-center space-y-1';
                 card.dataset.userId = player.userId;
                 card.innerHTML = `<div class="font-semibold">${player.name}</div>`;
-                
+                if (!player.isAlive) card.classList.add('eliminated');
+
                 if (gameData.gameState === 'day') {
                     const votesForPlayer = Object.values(gameData.votes || {}).filter(v => v === player.userId).length;
                     if (votesForPlayer > 0) {
-                        card.innerHTML += `<div class="text-xs mt-1 bg-red-500 rounded-full px-2">${votesForPlayer} Vote(s)</div>`;
+                        card.innerHTML += `<div class="text-xs mt-1 bg-red-600 rounded-full px-2 py-0.5">${votesForPlayer} Vote(s)</div>`;
                     }
                 }
-                
                 playerGrid.appendChild(card);
             });
-            
             handlePlayerActions(gameData, me);
         }
 
         function handlePlayerActions(gameData, me) {
-            const actionArea = document.getElementById('action-area');
             const actionPrompt = document.getElementById('action-prompt');
             const playerGrid = document.getElementById('game-player-grid');
             let actionType = null;
@@ -519,72 +431,54 @@
             let eligibleTargets = [];
 
             if (!me.isAlive) {
-                actionArea.classList.add('hidden');
-                playerGrid.querySelectorAll('button').forEach(b => b.disabled = true);
-                return;
-            }
-
-            if (gameData.gameState === 'night') {
+                promptText = "You have been eliminated.";
+            } else if (gameData.gameState === 'night') {
                 const nightActions = gameData.nightActions || {};
                 switch (me.role) {
                     case 'Mafia':
                         if (!nightActions.mafiaTarget) {
                             actionType = 'mafiaKill';
                             promptText = 'Choose a player to eliminate.';
+                            // FIX: Mafia cannot target other Mafia or themselves
                             eligibleTargets = gameData.players.filter(p => p.isAlive && p.role !== 'Mafia');
-                        } else {
-                             promptText = 'The Mafia has chosen. Waiting for others...';
-                        }
+                        } else { promptText = 'The hit is planned. Waiting for dawn...'; }
                         break;
                     case 'Doctor':
                          if (!nightActions.doctorSave) {
-                            actionType = 'doctorSave';
-                            promptText = 'Choose a player to save.';
+                            actionType = 'doctorSave'; promptText = 'Choose a player to save.';
                             eligibleTargets = gameData.players.filter(p => p.isAlive);
-                        } else {
-                            promptText = 'You have made your choice. Waiting for others...';
-                        }
+                        } else { promptText = 'You have made your house call. Waiting for dawn...'; }
                         break;
                     case 'Sheriff':
                          if (!nightActions.sheriffCheck) {
-                            actionType = 'sheriffCheck';
-                            promptText = 'Choose a player to investigate.';
+                            actionType = 'sheriffCheck'; promptText = 'Choose a player to investigate.';
                             eligibleTargets = gameData.players.filter(p => p.isAlive && p.userId !== currentUserId);
                         } else {
                              const checkedPlayer = gameData.players.find(p => p.userId === nightActions.sheriffCheck);
-                             promptText = `You investigated ${checkedPlayer.name}. They are ${checkedPlayer.role === 'Mafia' ? 'MAFIA' : 'NOT MAFIA'}.`;
+                             promptText = `Your investigation reveals ${checkedPlayer.name} is ${checkedPlayer.role === 'Mafia' ? 'part of the Mafia' : 'not part of the Mafia'}.`;
                         }
                         break;
-                    default:
-                        promptText = 'You sleep soundly through the night...';
+                    default: promptText = 'The town sleeps, but you are restless...';
                 }
             } else if (gameData.gameState === 'day') {
                 const votes = gameData.votes || {};
                 if (!votes[currentUserId]) {
-                    actionType = 'vote';
-                    promptText = 'Discuss and vote to eliminate a player.';
+                    actionType = 'vote'; promptText = 'Discuss, then cast your vote to eliminate a suspect.';
                     eligibleTargets = gameData.players.filter(p => p.isAlive);
                 } else {
                     const votedPlayer = gameData.players.find(p => p.userId === votes[currentUserId]);
-                    promptText = `You have voted for ${votedPlayer.name}. Waiting for others to vote.`;
+                    promptText = `You have voted for ${votedPlayer.name}. The town awaits a decision.`;
                 }
             }
 
-            if (promptText) {
-                actionPrompt.textContent = promptText;
-                actionArea.classList.remove('hidden');
-            } else {
-                actionArea.classList.add('hidden');
-            }
+            actionPrompt.textContent = promptText;
             
             playerGrid.querySelectorAll('button').forEach(card => {
                 const cardUserId = card.dataset.userId;
                 const isEligible = eligibleTargets.some(p => p.userId === cardUserId);
                 card.disabled = !isEligible;
                 card.onclick = isEligible ? () => handleCardClick(cardUserId, actionType) : null;
-                card.classList.toggle('opacity-50', !isEligible);
-                card.classList.toggle('cursor-not-allowed', !isEligible);
-                card.classList.toggle('hover:bg-indigo-500', isEligible);
+                card.classList.toggle('selectable', isEligible);
             });
             
             if (localGameState.hostId === currentUserId) {
@@ -594,167 +488,107 @@
         
         async function handleCardClick(targetUserId, actionType) {
             if (!actionType) return;
-            
             const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode);
-            let updatePayload = {};
-
-            if (actionType === 'mafiaKill') {
-                updatePayload['nightActions.mafiaTarget'] = targetUserId;
-            } else if (actionType === 'doctorSave') {
-                updatePayload['nightActions.doctorSave'] = targetUserId;
-            } else if (actionType === 'sheriffCheck') {
-                updatePayload['nightActions.sheriffCheck'] = targetUserId;
-            } else if (actionType === 'vote') {
-                updatePayload[`votes.${currentUserId}`] = targetUserId;
-            }
-            
-            try {
-                await updateDoc(gameRef, updatePayload);
-            } catch (error) {
-                console.error('Error submitting action:', error);
-            }
+            let payload = {};
+            if (actionType === 'mafiaKill') payload['nightActions.mafiaTarget'] = targetUserId;
+            else if (actionType === 'doctorSave') payload['nightActions.doctorSave'] = targetUserId;
+            else if (actionType === 'sheriffCheck') payload['nightActions.sheriffCheck'] = targetUserId;
+            else if (actionType === 'vote') payload[`votes.${currentUserId}`] = targetUserId;
+            await updateDoc(gameRef, payload);
         }
         
         let isProcessing = false;
         async function checkAndProcessPhaseEnd(gameData) {
-            if (isProcessing) return;
-            isProcessing = true;
-            
-            const livingPlayers = gameData.players.filter(p => p.isAlive);
-            const nightActions = gameData.nightActions || {};
-            
+            if (isProcessing) return; isProcessing = true;
+            const living = gameData.players.filter(p => p.isAlive);
             if (gameData.gameState === 'night') {
-                const mafiaDone = !!nightActions.mafiaTarget;
-                const doctorDone = !livingPlayers.some(p => p.role === 'Doctor') || !!nightActions.doctorSave;
-                const sheriffDone = !livingPlayers.some(p => p.role === 'Sheriff') || !!nightActions.sheriffCheck;
-
-                if (mafiaDone && doctorDone && sheriffDone) {
-                    await processNight(gameData);
-                }
+                const actions = gameData.nightActions || {};
+                const mafiaDone = !!actions.mafiaTarget;
+                const docDone = !living.some(p => p.role === 'Doctor') || !!actions.doctorSave;
+                const sheriffDone = !living.some(p => p.role === 'Sheriff') || !!actions.sheriffCheck;
+                if (mafiaDone && docDone && sheriffDone) await processNight(gameData);
             } else if (gameData.gameState === 'day') {
                 const votes = gameData.votes || {};
-                const livingPlayerIds = livingPlayers.map(p => p.userId);
-                const votesCast = Object.keys(votes).filter(voterId => livingPlayerIds.includes(voterId)).length;
-                
-                if (votesCast === livingPlayers.length) {
-                    await processDay(gameData);
-                }
+                const livingIds = living.map(p => p.userId);
+                const votesCast = Object.keys(votes).filter(id => livingIds.includes(id)).length;
+                if (votesCast === living.length) await processDay(gameData);
             }
-            
             isProcessing = false;
         }
         
         async function processNight(gameData) {
             const { nightActions, players } = gameData;
             let killedPlayer = null;
-            let announcement = '';
-            
             if (nightActions.mafiaTarget && nightActions.mafiaTarget !== nightActions.doctorSave) {
                 killedPlayer = players.find(p => p.userId === nightActions.mafiaTarget);
             }
-            
-            const updatedPlayers = players.map(p => {
-                if (killedPlayer && p.userId === killedPlayer.userId) {
-                    return { ...p, isAlive: false };
-                }
-                return p;
-            });
-
-            if (killedPlayer) {
-                announcement = `A shadow fell over the town. ${killedPlayer.name} was found dead. They were a ${killedPlayer.role}.`;
-            } else {
-                announcement = "The town was quiet. No one died last night.";
-            }
-            
+            const updatedPlayers = players.map(p => ({...p, isAlive: p.isAlive && (!killedPlayer || p.userId !== killedPlayer.userId)}));
+            const narrative = getNarrative(killedPlayer ? 'dayStartWithKill' : 'dayStartNoKill', { victim: killedPlayer });
             const winner = checkWinCondition(updatedPlayers);
-
-            const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode);
-            await updateDoc(gameRef, {
-                players: updatedPlayers,
-                gameState: winner ? 'game-over' : 'day',
-                winner: winner,
-                announcement: announcement,
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode), {
+                players: updatedPlayers, gameState: winner ? 'game-over' : 'day',
+                winner, narrative
             });
         }
         
         async function processDay(gameData) {
             const { votes, players } = gameData;
             const voteCounts = {};
-            Object.values(votes).forEach(targetId => {
-                voteCounts[targetId] = (voteCounts[targetId] || 0) + 1;
-            });
-            
+            Object.values(votes).forEach(id => voteCounts[id] = (voteCounts[id] || 0) + 1);
             let maxVotes = 0;
             let playersToEliminate = [];
             for (const userId in voteCounts) {
                 if (voteCounts[userId] > maxVotes) {
-                    maxVotes = voteCounts[userId];
-                    playersToEliminate = [userId];
+                    maxVotes = voteCounts[userId]; playersToEliminate = [userId];
                 } else if (voteCounts[userId] === maxVotes) {
                     playersToEliminate.push(userId);
                 }
             }
 
-            let eliminatedPlayer = null;
-            let announcement = '';
-
-            if (playersToEliminate.length === 1 && maxVotes > 0) {
-                eliminatedPlayer = players.find(p => p.userId === playersToEliminate[0]);
-            }
-            
-            const updatedPlayers = players.map(p => {
-                if (eliminatedPlayer && p.userId === eliminatedPlayer.userId) {
-                    return { ...p, isAlive: false };
-                }
-                return p;
-            });
-            
-            if (eliminatedPlayer) {
-                announcement = `The town has spoken! ${eliminatedPlayer.name} has been eliminated. They were a ${eliminatedPlayer.role}.`;
-            } else {
-                announcement = "The vote was tied. No one was eliminated.";
-            }
-            
+            let eliminatedPlayer = playersToEliminate.length === 1 ? players.find(p => p.userId === playersToEliminate[0]) : null;
+            const updatedPlayers = players.map(p => ({...p, isAlive: p.isAlive && (!eliminatedPlayer || p.userId !== eliminatedPlayer.userId)}));
+            const narrative = getNarrative(eliminatedPlayer ? 'playerEliminated' : 'voteTie', { eliminated: eliminatedPlayer });
             const winner = checkWinCondition(updatedPlayers);
             
-            const gameRef = doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode);
-            await updateDoc(gameRef, {
-                players: updatedPlayers,
-                gameState: winner ? 'game-over' : 'night',
-                winner: winner,
-                dayNumber: gameData.dayNumber + 1,
-                announcement: announcement,
-                nightActions: {},
-                votes: {},
+            await updateDoc(doc(db, `artifacts/${appId}/public/data/mafiaGames`, currentGameCode), {
+                players: updatedPlayers, gameState: winner ? 'game-over' : 'night',
+                winner, dayNumber: gameData.dayNumber + 1,
+                narrative, nightActions: {}, votes: {},
             });
         }
         
         function checkWinCondition(players) {
-            const livingPlayers = players.filter(p => p.isAlive);
-            const mafiaCount = livingPlayers.filter(p => p.role === 'Mafia').length;
-            const townCount = livingPlayers.length - mafiaCount;
-
-            if (mafiaCount === 0) {
-                return 'Town';
-            }
-            if (mafiaCount >= townCount) {
-                return 'Mafia';
-            }
+            const living = players.filter(p => p.isAlive);
+            const mafiaCount = living.filter(p => p.role === 'Mafia').length;
+            const townCount = living.length - mafiaCount;
+            if (mafiaCount === 0) return 'The Town';
+            if (mafiaCount >= townCount) return 'The Mafia';
             return null;
+        }
+
+        function getNarrative(event, data = {}) {
+            switch (event) {
+                case 'nightStart': return "Night falls, and a chilling silence descends upon the town. Eyes closed, everyone awaits the dawn, hoping to see it.";
+                case 'dayStartWithKill': return `A grim morning. The town awakens to find ${data.victim.name} has been murdered. Their role was a ${data.victim.role}.`;
+                case 'dayStartNoKill': return "A miracle! The sun rises and everyone is safe. The Mafia's plans were thwarted last night.";
+                case 'playerEliminated': return `Accusations flew, and the town has made its decision. ${data.eliminated.name} has been eliminated. They were a ${data.eliminated.role}.`;
+                case 'voteTie': return "The town is divided. With a tied vote, no one is eliminated, and a nervous tension fills the air as night approaches again.";
+                default: return "The story continues...";
+            }
         }
         
         function updateGameOverUI(gameData) {
-            document.getElementById('winner-announcement').textContent = `The ${gameData.winner} team wins!`;
-            const finalRolesList = document.getElementById('final-roles-list');
-            finalRolesList.innerHTML = '';
-            gameData.players.forEach(player => {
+            document.getElementById('winner-announcement').textContent = `${gameData.winner} wins!`;
+            const list = document.getElementById('final-roles-list');
+            list.innerHTML = '';
+            gameData.players.forEach(p => {
                 const li = document.createElement('li');
-                li.textContent = `${player.name} was a ${player.role}`;
-                finalRolesList.appendChild(li);
-});
+                li.className = 'flex items-center justify-between p-2 bg-gray-700 rounded-md';
+                li.innerHTML = `<span>${p.name}</span> <span class="font-bold">${ROLE_ICONS[p.role]} ${p.role}</span>`;
+                list.appendChild(li);
+            });
         }
 
-        // --- UTILITY FUNCTIONS ---
         function generateGameCode() {
             return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').sort(() => 0.5 - Math.random()).slice(0, 4).join('');
         }
@@ -763,17 +597,13 @@
             const code = document.getElementById('game-code-display').textContent;
             const textArea = document.createElement("textarea");
             textArea.value = code;
-            textArea.style.position = "fixed"; 
-            textArea.style.left = "-9999px";
+            textArea.style.position = "fixed"; textArea.style.left = "-9999px";
             document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
+            textArea.focus(); textArea.select();
             try {
                 document.execCommand('copy');
                 showAlert(`Game code "${code}" copied!`);
-            } catch (err) {
-                showAlert('Failed to copy code.', 'error');
-            }
+            } catch (err) { showAlert('Failed to copy code.', 'error'); }
             document.body.removeChild(textArea);
         }
         
@@ -786,14 +616,12 @@
             document.getElementById('game-code-input').value = '';
         }
 
-        // --- APP INITIALIZATION ---
         async function init() {
             await initializeAuth();
             showScreen('initial');
         }
 
         init();
-
     </script>
 </body>
 </html>
